@@ -14,21 +14,31 @@ class TimeZone(models.Model):
 
 class Company(models.Model):
 	name = models.CharField("公司名称",max_length=256)
-	timeZone = models.ForeignKey(TimeZone,verbose_name="时区")            # 后需要改为对应的类型
+	logoIco = models.ImageField("商标",upload_to="logoico")
+	timeZone = models.ForeignKey(TimeZone,verbose_name="时区")           
+	terminalUrl = models.CharField("交易终端下载地址",max_length=512)
+	
+class AccountType(models.Model):
+	company = models.ForeignKey(Company,verbose_name="交易商")
+	name = models.CharField("名称",max_length=256)
 
+
+class Currency(models.Model):
+	code = models.CharField("代码",max_length=256)
+	name = models.CharField("名称",max_length=256)
 
 class Account(models.Model):
 	userId = models.IntegerField("账户号")	
 	traderPassword =  models.CharField("交易密码",max_length=256)
 	investorPassword = models.CharField("投资人密码",max_length=256)
 	phonePassword = models.CharField("手机密码",max_length=256)	
-	company = models.CharField("交易商",max_length=256)         # 需要改为配置
-	currency = models.CharField("资金类型",max_length=256)      # 需要改配置
-	leverage = models.IntegerField("杠杆倍数")   # 需要改为配置
-	server = models.CharField("服务器地址",max_length=256)
-        accountType = models.CharField("账户类型",max_length=256)   # 后续需要改称可配置
+	company = models.ForeignKey(Company,verbose_name="交易商")         
+	currency = models.ForeignKey(Currency,verbose_name="资金类型")      
+	leverage = models.IntegerField("杠杆倍数")   
+	server = models.CharField("服务器地址",max_length=512)
+        accountType = models.ForeignKey(AccountType,verbose_name="账户类型")  
+	tradingAllowed = models.BooleanField("是否允许交易") 
 	lotSzie = models.IntegerField("交易手数")    
-	tradingAllowed = models.IntegerField("是否允许交易") # 需要改为布尔型
 	
 
 

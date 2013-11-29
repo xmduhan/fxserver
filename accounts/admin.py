@@ -3,10 +3,11 @@
 from django.contrib import admin
 from accounts.models import *
 
-
-
 class AccountAdmin(admin.ModelAdmin):
-    list_display=["loginId","investor","companyListDisplay","accountBillType","demo","tradingAllowed","lotSize"]
+    list_display=["loginId","investor","companyListDisplay","accountBillType","accountLevel","demo","tradingAllowed","lotSize"]
+    list_filter=["investor","company","demo","tradingAllowed"]
+    search_fields=["loginId","investor","company","accountBillType","tradingAllowed"]
+    list_select_related=True
 admin.site.register(Account,AccountAdmin)
     
 class AccountServerAdmin(admin.ModelAdmin):

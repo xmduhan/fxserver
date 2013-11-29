@@ -6,19 +6,20 @@ from accounts.models import *
 
 
 class AccountAdmin(admin.ModelAdmin):
-    #list_display=["loginId","",""]
-    
-    
-    pass
+    list_display=["loginId","investor","companyListDisplay","accountBillType","demo","tradingAllowed","lotSize"]
 admin.site.register(Account,AccountAdmin)
+    
+class AccountServerAdmin(admin.ModelAdmin):
+    list_display = ["companyListDisplay","name","address"]
+admin.site.register(AccountServer,AccountServerAdmin)
 
+class AccountBillTypeAdmin(admin.ModelAdmin):
+    list_display = ["code","name"]
+admin.site.register(AccountBillType,AccountBillTypeAdmin)
 
-
-
-admin.site.register(AccountBillType)
-admin.site.register(AccountType)
-
-
+class AccountTypeAdmin(admin.ModelAdmin):
+    list_display = ["companyListDisplay","name"]
+admin.site.register(AccountType,AccountTypeAdmin)
 
 class CompanyAdmin(admin.ModelAdmin):
     list_display=["logoIcoListDisplay","name","timeZone"]

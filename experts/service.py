@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 from django.http import HttpResponse
 from django.utils import timezone
+from django.db import transaction
 from models import *
 import json,random,string
 
@@ -13,8 +14,9 @@ def packResult(errcode=0, errmsg="", data={}):
     #print(result)
     return json.dumps(result)
 
-def expertRegister(request):
 
+def expertRegister(request):
+    
     # 读取智能交易代码
     try:
         expertCode = request.POST["ExpertCode"]
@@ -38,36 +40,44 @@ def expertRegister(request):
 
     # 生成更新令牌
     expertInstance.token = "".join(random.sample(string.uppercase+string.digits,8))
-        
-    # 读取智能交易配置数据
-    expertList = Expert.objects.filter(code=expertCode)
-    if len(expertList) <> 0 :       
-       expert = expertList[0]
-    else:
-         # 不存在则新建
-        expert = Expert()
-        expert.code = expertCode
-        expert.name = u"未命名(%s)"  % expertCode        
-        expert.save()
-    expertInstance.expert = expert
-
-    # 读取交易账户信息
-    accountList = Account.objects.filter(loginId=accountLoginId,server__name=accountServerName)
-    if len(accountList) <> 0 :
-       account = accountList[0]
-    else:
-        return HttpResponse(packResult(-1,"账户配置不存在",{}))    
-    expertInstance.account = account
-
-    # 保存实例信息
-    #print("account.losSzie=",account.lotSize)
-    expertInstance.tradingAllowed = account.tradingAllowed
-    expertInstance.lotSize = account.lotSize
-    expertInstance.positionCount = 0
-    expertInstance.floatProfit = 0    
-    expertInstance.stateTime = timezone.now()
-    expertInstance.save()
     
+    # 数据库事务开始
+    transaction.set_autocommit(False)
+    try:
+        # 读取智能交易配置数据
+        expertList = Expert.objects.filter(code=expertCode)
+        if len(expertList) <> 0 :       
+            expert = expertList[0]
+        else:
+             # 不存在则新建
+            expert = Expert()
+            expert.code = expertCode
+            expert.name = u"未命名(%s)"  % expertCode        
+            expert.save()             
+        expertInstance.expert = expert
+    
+        # 读取交易账户信息
+        accountList = Account.objects.filter(loginId=accountLoginId,server__name=accountServerName)
+        if len(accountList) <> 0 :
+           account = accountList[0]
+        else:
+            transaction.rollback()    # 回滚可能已经写入的expert对象
+            return HttpResponse(packResult(-1,"账户配置不存在",{}))    
+        expertInstance.account = account
+
+        # 保存实例信息
+        #print("account.losSzie=",account.lotSize)
+        expertInstance.tradingAllowed = account.tradingAllowed
+        expertInstance.lotSize = account.lotSize
+        expertInstance.positionCount = 0
+        expertInstance.floatProfit = 0    
+        expertInstance.stateTime = timezone.now()
+        expertInstance.save()
+    finally:
+        transaction.set_autocommit(True)
+    
+    # 数据库事务结束
+
     # 准备返回给客户端的信息
     data = {}
     data["ExpertInstanceId"] = expertInstance.id

@@ -22,5 +22,5 @@ urlpatterns = patterns('',
     url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT }),
     
     # 映射expert应用
-    url(r'^experts/',include('experts.urls')),
+    url(r'^experts/',include('experts.urls',namespace="experts")),
 )

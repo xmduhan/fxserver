@@ -19,9 +19,9 @@ class ExpertInstance(models.Model):
     expert = models.ForeignKey(Expert,verbose_name="智能交易")
     account = models.ForeignKey(Account,verbose_name="账户")
     tradingAllowed = models.BooleanField("是否允许交易")
-    lotSize = models.DecimalField("交易手数",max_digits=4,decimal_places=2)
+    lotSize = models.FloatField("交易手数")
     positionCount = models.IntegerField("当前头寸数")
-    floatProfit = models.DecimalField("浮动盈亏",max_digits=12,decimal_places=2)
+    floatProfit = models.FloatField("浮动盈亏")
     stateTime = models.DateTimeField("状态更新时间")
     class Meta:
         verbose_name = "(02)交易实例"

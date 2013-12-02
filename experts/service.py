@@ -1,32 +1,35 @@
 # -*- coding:utf-8 -*-
 from django.http import HttpResponse
+from django.utils import timezone
 from models import *
-import json
+import json,random,string
+
 
 def packResult(errcode=0, errmsg="", data={}):
     result = {}
     result["errcode"] = errcode
     result["errmsg"] = errmsg
     result["data"] = data 
+    #print(result)
     return json.dumps(result)
 
 def expertRegister(request):
 
     # 读取智能交易代码
     try:
-        expertCode = request.POST("ExpertCode")
+        expertCode = request.POST["ExpertCode"]
     except:
         return HttpResponse(packResult(-1,"需要提供智能交易代码(ExpertCode)",{}))
     
     # 读取当前登录账户号
     try:
-        accountLoginId = request.POST("AccountLoginId")
+        accountLoginId = request.POST["AccountLoginId"]
     except:
         return HttpResponse(packResult(-1,"需要提供账户号(AccountLoginId)",{}))
         
     # 读取服务器名称 
     try:
-        accountServerName = request.POST("AccountServerName")
+        accountServerName = request.POST["AccountServerName"]
     except: 
         return HttpResponse(packResult(-1,"需要提供服务器名称(AccountServerName)",{}))
 
@@ -44,7 +47,8 @@ def expertRegister(request):
          # 不存在则新建
         expert = Expert()
         expert.code = expertCode
-        expert.name = "未命名(%)" % expertCode
+        expert.name = u"未命名(%s)"  % expertCode        
+        expert.save()
     expertInstance.expert = expert
 
     # 读取交易账户信息
@@ -56,19 +60,21 @@ def expertRegister(request):
     expertInstance.account = account
 
     # 保存实例信息
+    #print("account.losSzie=",account.lotSize)
     expertInstance.tradingAllowed = account.tradingAllowed
-    expertInstance.lotSzie = account.lotSize
+    expertInstance.lotSize = account.lotSize
     expertInstance.positionCount = 0
     expertInstance.floatProfit = 0    
+    expertInstance.stateTime = timezone.now()
     expertInstance.save()
     
     # 准备返回给客户端的信息
     data = {}
     data["ExpertInstanceId"] = expertInstance.id
-    data["token"] = expertInstance.token
-    data["AccountType"] = expertInstance.account.accountType
-    data["TrandingAllowed"] = expertInstance.tradingAllowed
-    data["LotSize"] = expertInstance.losSize    
+    data["Token"] = expertInstance.token
+    data["AccountTypeName"] = expertInstance.account.accountType.name
+    data["TradingAllowed"] = expertInstance.tradingAllowed
+    data["LotSize"] = expertInstance.lotSize    
         
     return HttpResponse(packResult(0,"成功",data))
 

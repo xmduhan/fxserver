@@ -32,6 +32,7 @@ class ExpertIntanceTest(TransactionTestCase):
         postData = {}
         postData["ExpertCode"] = expert.code
         postData["AccountLoginId"] = account.loginId
+        postData["AccountCompanyName"] = account.company.name
         postData["AccountServerName"] = account.server.name
         response = self.client.post(url,postData)
         
@@ -70,6 +71,7 @@ class ExpertIntanceTest(TransactionTestCase):
         postData = {}
         postData["ExpertCode"] = expertCode
         postData["AccountLoginId"] = account.loginId
+        postData["AccountCompanyName"] = account.company.name
         postData["AccountServerName"] = account.server.name
         response = self.client.post(url,postData)
 
@@ -101,8 +103,10 @@ class ExpertIntanceTest(TransactionTestCase):
         
         # 生成一个不存在的acount信息
         accountLoginId = string.atoi("".join(random.sample(string.digits,10)))
+        accountCompanyName = "".join(random.sample(string.ascii_letters,30))
         accountServerName = "".join(random.sample(string.ascii_letters,30))
         
+
         # 随机生成一个expert代码
         expertCode = "".join(random.sample(string.ascii_letters,20))   
 
@@ -111,6 +115,7 @@ class ExpertIntanceTest(TransactionTestCase):
         postData = {}
         postData["ExpertCode"] = expertCode
         postData["AccountLoginId"] = accountLoginId
+        postData["AccountCompanyName"] = accountCompanyName
         postData["AccountServerName"] = accountServerName
         response = self.client.post(url,postData)
 
@@ -122,19 +127,202 @@ class ExpertIntanceTest(TransactionTestCase):
 
         # 检查事务的完整性，expert配置是否回滚
         expertList=Expert.objects.filter(code=expertCode)
-        self.assertEqual(len(expertList),0)
+        self.assertEqual(len(expertList),0)        # 事务是否成功回滚
+
+
+
+
+class DatabaseTransactionTest(TransactionTestCase):
 
     #@transaction.atomic()
     def test_transaction_1(self):        
-        with transaction.commit_manually():
+        # with transaction.commit_manually():
+        expert = Expert()
+        expert.code = "code"
+        expert.name = "name"
+        expert.save()
+        #transaction.rollback()
+        #expertList = Expert.objects.filter(code="code")
+        #self.assertEqual(len(expertList),0)
+
+           
+    def test_transaction_2(self):        
+        #transaction.set_autocommit(False)
+        expert = Expert()
+        expert.code = "code"
+        expert.name = "name"
+        expert.save()
+        #transaction.set_autocommit(True)
+
+        #transaction.rollback()
+        #expertList = Expert.objects.filter(code="code")
+        #self.assertEqual(len(expertList),0)
+
+    # 默认情况下调用save()，数据就写到数据库中并提交
+    def test_transaction_3(self):
+        testcode = "".join(random.sample(string.letters,20))
+        testname = "".join(random.sample(string.letters,20))
+        step = 0
+        try:
             expert = Expert()
-            expert.code = "code"
-            expert.name = "name"
+            expert.code = testcode
+            expert.name = testname
+            expert.save()
+            step = 1
+            raise
+        except:  
+            pass
+        expertList = Expert.objects.filter(code=testcode)
+        self.assertEqual(step,1)                                #  确认执行到了raise
+        self.assertEqual(len(expertList),1)                     #  确认数据已经提交了
+    
+    # 如果使用了transaction.atiom
+    def test_transaction_4(self):
+        testcode = "".join(random.sample(string.letters,20))
+        testname = "".join(random.sample(string.letters,20))
+        step = 0
+        try:
+           with transaction.atomic():
+                expert = Expert()
+                expert.code = testcode
+                expert.name = testname
+                expert.save()                
+                #transaction.commit()
+                step = 1
+                raise
+        except:
+            pass            
+        expertList = Expert.objects.filter(code=testcode)
+        self.assertEqual(step,1)                                # 确认执行到了raise
+        self.assertEqual(len(expertList),0)                     # 确认数据已经被回滚了
+
+    # 测试使用函数的事务修饰符
+    def test_transaction_5(self):
+        def test_transaction_5_1():            
+            testcode = "".join(random.sample(string.letters,20))
+            testname = "".join(random.sample(string.letters,20))
+            step = 0
+            try:
+                expert = Expert()
+                expert.code = testcode
+                expert.name = testname
+                expert.save()
+                step = 1
+                raise
+            except:  
+                pass
+            expertList = Expert.objects.filter(code=testcode)
+            self.assertEqual(step,1)                                #  确认执行到了raise
+            self.assertEqual(len(expertList),1)                     #  确认数据已经提交了
+        
+        @transaction.atomic
+        def test_transaction_5_2():
+            testcode = "".join(random.sample(string.letters,20))
+            testname = "".join(random.sample(string.letters,20))
+            step = 0
+            try:
+                expert = Expert()
+                expert.code = testcode
+                expert.name = testname
+                expert.save()
+                step = 1
+                raise
+            except:  
+                pass
+            expertList = Expert.objects.filter(code=testcode)
+            self.assertEqual(step,1)                                #  确认执行到了raise
+            self.assertEqual(len(expertList),0)                     #  确认数据已经回滚了
+    
+    # 测试使用savepoint
+    def test_transaction_6(self):
+        testcode1 = "".join(random.sample(string.letters,20))
+        testname1 = "".join(random.sample(string.letters,20))
+        testcode2 = "".join(random.sample(string.letters,20))
+        testname2 = "".join(random.sample(string.letters,20))
+        @transaction.atomic
+        def test_transaction_6_1():            
+            # 插入第1个对象
+            expert1 = Expert()
+            expert1.code = testcode1
+            expert1.name = testname1
+            expert1.save()
+            sp = transaction.savepoint()               #  设置事务保存点            
+            
+            # 插入第2个对象
+            expert2 = Expert()
+            expert2.code = testcode2
+            expert2.name = testname2
+            expert2.save()
+            transaction.savepoint_rollback(sp)         # 回滚到插入第2个对象之前的状态
+        
+        test_transaction_6_1()
+        expertList1 = Expert.objects.filter(code=testcode1)
+        self.assertEqual(len(expertList1),1)
+        expertList2 = Expert.objects.filter(code=testcode2)
+        self.assertEqual(len(expertList2),0)
+    
+    # 测试关闭自动提交
+    def test_transaction_7(self):
+        transaction.set_autocommit(False)
+        try:            
+            testcode = "".join(random.sample(string.letters,20))
+            testname = "".join(random.sample(string.letters,20))
+            step = 0
+            expert = Expert()
+            expert.code = testcode
+            expert.name = testname
             expert.save()
             transaction.rollback()
-        expertList = Expert.objects.filter(code="code")
-        self.assertEqual(len(expertList),0)
-
+        finally:
+            transaction.set_autocommit(True)
         
+        expertList = Expert.objects.filter(code=testcode)
+        self.assertEqual(len(expertList),0)
+    
+    # 测试在atomic事务中进行回滚
+    def test_transaction_8(self):
+        testcode = "".join(random.sample(string.letters,20))
+        testname = "".join(random.sample(string.letters,20))
+        step = 0
+        try:
+            with transaction.atomic():
+                expert = Expert()
+                expert.code = testcode
+                expert.name = testname
+                expert.save()
+                step = 1
+                transaction.rollback()             # 这原子事务中rollback是要抛异常的
+        except:
+            self.assertEqual(step,1)
+            step=2
+        self.assertEqual(step,2)
+        expertList = Expert.objects.filter(code=testcode)
+        self.assertEqual(len(expertList),0)
+                
+    
+    # 测试在atomic事务中进行回滚(使用savepoint变通)
+    def test_transaction_9(self):
+        testcode = "".join(random.sample(string.letters,20))
+        testname = "".join(random.sample(string.letters,20))
+        step = 0
+        try:
+            with transaction.atomic():
+                sp = transaction.savepoint()
+                expert = Expert()
+                expert.code = testcode
+                expert.name = testname
+                expert.save()
+                transaction.savepoint_rollback(sp)           # 回滚到保存点就不抛异常了
+                step = 1
+        except:
+            step=2
+        self.assertEqual(step,1)
+        expertList = Expert.objects.filter(code=testcode)
+        self.assertEqual(len(expertList),0)
+                
+
+
+
+
 
 

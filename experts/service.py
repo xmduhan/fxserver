@@ -20,24 +20,32 @@ def expertRegister(request):
     # 读取智能交易代码
     try:
         expertCode = request.POST["ExpertCode"]
+        if len(expertCode) == 0:
+            raise
     except:
         return HttpResponse(packResult(-1,"需要提供智能交易代码(ExpertCode)",{}))
     
     # 读取当前登录账户号
     try:
         accountLoginId = request.POST["AccountLoginId"]
+        if len(accountLoginId) == 0:
+            raise
     except:
         return HttpResponse(packResult(-1,"需要提供账户号(AccountLoginId)",{}))
         
     # 读取交易商名称
     try:
         accountCompanyName = request.POST["AccountCompanyName"]
+        if len(accountCompanyName) == 0:
+            raise
     except:
         return HttpResponse(packResult(-1,"需要提交易商名称(AccountCompanyName)",{}))           
     
     # 读取服务器名称 
     try:
         accountServerName = request.POST["AccountServerName"]
+        if len(accountServerName) == 0:
+            raise
     except: 
         return HttpResponse(packResult(-1,"需要提供服务器名称(AccountServerName)",{}))
 

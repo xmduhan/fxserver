@@ -129,6 +129,23 @@ class ExpertIntanceTest(TransactionTestCase):
         expertList=Expert.objects.filter(code=expertCode)
         self.assertEqual(len(expertList),0)        # 事务是否成功回滚
 
+    def test_expertRegister_4(self):
+        # 提交数据给服务
+        url = reverse("experts:service.ExpertRegister")
+        postData = {}
+        # 所有数据都填空的情况
+        postData["ExpertCode"] = ""
+        postData["AccountLoginId"] = ""
+        postData["AccountCompanyName"] = ""
+        postData["AccountServerName"] = ""
+        response = self.client.post(url,postData)
+
+        # 检查返回状态               
+        self.assertEqual(response.status_code,200)
+        result = json.loads(response.content)
+        self.assertIn("errcode",result)
+        self.assertEqual(result["errcode"],-1)
+
 
 
 

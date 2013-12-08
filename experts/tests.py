@@ -28,7 +28,7 @@ class ExpertIntanceTest(TransactionTestCase):
         expert = expertList[0]   
 
         # 提交数据给服务
-        url = reverse("experts:service.expertRegister")
+        url = reverse("experts:service.ExpertRegister")
         postData = {}
         postData["ExpertCode"] = expert.code
         postData["AccountLoginId"] = account.loginId
@@ -67,7 +67,7 @@ class ExpertIntanceTest(TransactionTestCase):
         expertCode = "".join(random.sample(string.ascii_letters,20))
        
         # 提交数据给服务
-        url = reverse("experts:service.expertRegister")
+        url = reverse("experts:service.ExpertRegister")
         postData = {}
         postData["ExpertCode"] = expertCode
         postData["AccountLoginId"] = account.loginId
@@ -111,7 +111,7 @@ class ExpertIntanceTest(TransactionTestCase):
         expertCode = "".join(random.sample(string.ascii_letters,20))   
 
         # 提交数据给服务
-        url = reverse("experts:service.expertRegister")
+        url = reverse("experts:service.ExpertRegister")
         postData = {}
         postData["ExpertCode"] = expertCode
         postData["AccountLoginId"] = accountLoginId
@@ -135,15 +135,14 @@ class ExpertIntanceTest(TransactionTestCase):
 class DatabaseTransactionTest(TransactionTestCase):
 
     #@transaction.atomic()
-    def test_transaction_1(self):        
-        # with transaction.commit_manually():
+    def test_transaction_1(self):       
+        #print("autocommit=",transaction.get_autocommit())        
+        testcode = "".join(random.sample(string.letters,20))
+        testname = "".join(random.sample(string.letters,20))        
         expert = Expert()
-        expert.code = "code"
-        expert.name = "name"
+        expert.code = testcode
+        expert.name = testname
         expert.save()
-        #transaction.rollback()
-        #expertList = Expert.objects.filter(code="code")
-        #self.assertEqual(len(expertList),0)
 
            
     def test_transaction_2(self):        
@@ -197,42 +196,44 @@ class DatabaseTransactionTest(TransactionTestCase):
         self.assertEqual(len(expertList),0)                     # 确认数据已经被回滚了
 
     # 测试使用函数的事务修饰符
-    def test_transaction_5(self):
-        def test_transaction_5_1():            
-            testcode = "".join(random.sample(string.letters,20))
-            testname = "".join(random.sample(string.letters,20))
-            step = 0
-            try:
-                expert = Expert()
-                expert.code = testcode
-                expert.name = testname
-                expert.save()
-                step = 1
-                raise
-            except:  
-                pass
-            expertList = Expert.objects.filter(code=testcode)
-            self.assertEqual(step,1)                                #  确认执行到了raise
-            self.assertEqual(len(expertList),1)                     #  确认数据已经提交了
+    def test_transaction_5(self):        
         
+        testcode = "".join(random.sample(string.letters,20))
+        testname = "".join(random.sample(string.letters,20))
+        self.step = 0
+        def test_transaction_5_1():
+            expert = Expert()
+            expert.code = testcode
+            expert.name = testname
+            expert.save()
+            self.step = 1
+            raise Exception()
+        try:
+            test_transaction_5_1()
+        except:
+            pass
+        expertList = Expert.objects.filter(code=testcode)
+        self.assertEqual(self.step,1)                                #  确认执行到了raise
+        self.assertEqual(len(expertList),1)                     #  确认数据已经提交了
+
+        testcode = "".join(random.sample(string.letters,20))
+        testname = "".join(random.sample(string.letters,20))
+        self.step = 0
         @transaction.atomic
-        def test_transaction_5_2():
-            testcode = "".join(random.sample(string.letters,20))
-            testname = "".join(random.sample(string.letters,20))
-            step = 0
-            try:
-                expert = Expert()
-                expert.code = testcode
-                expert.name = testname
-                expert.save()
-                step = 1
-                raise
-            except:  
-                pass
-            expertList = Expert.objects.filter(code=testcode)
-            self.assertEqual(step,1)                                #  确认执行到了raise
-            self.assertEqual(len(expertList),0)                     #  确认数据已经回滚了
-    
+        def test_transaction_5_2():            
+            expert = Expert()
+            expert.code = testcode
+            expert.name = testname
+            expert.save()            
+            self.step = 1
+            raise Exception()       
+        try:
+            test_transaction_5_2()        
+        except:
+            pass
+        self.assertEqual(self.step,1)
+        expertList = Expert.objects.filter(code = testcode)
+        self.assertEqual(len(expertList),0)                     #  确认数据已经回滚了
     # 测试使用savepoint
     def test_transaction_6(self):
         testcode1 = "".join(random.sample(string.letters,20))
@@ -320,7 +321,7 @@ class DatabaseTransactionTest(TransactionTestCase):
         expertList = Expert.objects.filter(code=testcode)
         self.assertEqual(len(expertList),0)
                 
-
+    
 
 
 

@@ -100,6 +100,6 @@ def expertRegister(request):
     data["AccountTypeName"] = expertInstance.account.accountType.name
     data["TradingAllowed"] = expertInstance.tradingAllowed
     data["LotSize"] = expertInstance.lotSize    
-        
+    print(data)        
     return HttpResponse(packResult(0,"成功",data))
 

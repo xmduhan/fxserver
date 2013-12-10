@@ -102,7 +102,7 @@ class Account(models.Model):
     leverage = models.IntegerField("杠杆倍数")   
     server = models.ForeignKey(AccountServer,verbose_name="服务器地址")
     accountType = models.ForeignKey(AccountType,verbose_name="账户类型")  
-    rebatePerLot = models.IntegerField("手均返佣($)")
+    rebatePerLot = models.FloatField("手均返佣($)")
     tradingAllowed = models.BooleanField("是否允许交易") 
     lotSize = models.FloatField("交易手数")   
     investor = models.ForeignKey(Investor,verbose_name="投资人")

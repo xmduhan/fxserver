@@ -146,7 +146,22 @@ class ExpertIntanceTest(TransactionTestCase):
         self.assertIn("errcode",result)
         self.assertEqual(result["errcode"],-1)
 
+    def test_expertRegister_5(self):
+        # 提交数据给服务
+        url = reverse("experts:service.ExpertRegister")
+        postData = {}
+        # 所有数据都填空的情况
+        postData["ExpertCode"] = "Scalping(rb3)"
+        postData["AccountLoginId"] = "100646"
+        postData["AccountCompanyName"] = "HF Markets Ltd"
+        postData["AccountServerName"] = "HFMarkets-Live Server"
+        response = self.client.post(url,postData)
 
+        # 检查返回状态               
+        self.assertEqual(response.status_code,200)
+        result = json.loads(response.content)
+        self.assertIn("errcode",result)
+        self.assertEqual(result["errcode"],0)
 
 
 class DatabaseTransactionTest(TransactionTestCase):

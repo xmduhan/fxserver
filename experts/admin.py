@@ -8,7 +8,8 @@ class ExpertAdmin(admin.ModelAdmin):
 admin.site.register(Expert,ExpertAdmin)
 
 class ExpertInstanceAdmin(admin.ModelAdmin):
-    list_display=["id","expert","account","tradingAllowed","lotSize"]    
+    list_display=["id","expert","account","tradingAllowed","lotSize","state"]    
+    list_filter=["state"]
 admin.site.register(ExpertInstance,ExpertInstanceAdmin)
 
 

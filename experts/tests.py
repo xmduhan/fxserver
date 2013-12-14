@@ -208,7 +208,7 @@ class ExpertIntanceTest(TransactionTestCase):
         expertInstanceList = ExpertInstance.objects.filter(id=expertInstanceId)
         self.assertEqual(len(expertInstanceList),1)
         expertInstance = expertInstanceList[0]
-        self.assertEqual(expertInstance.state,'P')
+        self.assertEqual(expertInstance.state,False)
         
 
 

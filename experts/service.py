@@ -135,12 +135,12 @@ def expertUnregister(request):
         return HttpResponse(packResult(-1,"ExpertInstanceId and Token is not matched.",{}))
     
     # 检查Expert Instance是否失效
-    if expertInstance.state != "A":
+    if expertInstance.state != True:
         #print("expertInstance.state=",expertInstance.state)
         return HttpResponse(packResult(-1,"ExpertInstance is not active",{}))     
     
     # 更新ExpertInstance状态未失效
-    expertInstance.state = "P"
+    expertInstance.state = False
     expertInstance.stateTime = timezone.now()   
     expertInstance.save()
     

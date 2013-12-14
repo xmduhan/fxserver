@@ -11,7 +11,7 @@ from django.test import TransactionTestCase
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from accounts.models import Account
-from experts.models import Expert
+from experts.models import Expert,ExpertInstance
 
 class ExpertIntanceTest(TransactionTestCase):
     # (1)账户和智能交易配置都存在的情况
@@ -150,7 +150,7 @@ class ExpertIntanceTest(TransactionTestCase):
         # 提交数据给服务
         url = reverse("experts:service.ExpertRegister")
         postData = {}
-        # 所有数据都填空的情况
+        # 填写一个正常存在的帐号
         postData["ExpertCode"] = "Scalping(rb3)"
         postData["AccountLoginId"] = "100646"
         postData["AccountCompanyName"] = "HF Markets Ltd"
@@ -162,6 +162,54 @@ class ExpertIntanceTest(TransactionTestCase):
         result = json.loads(response.content)
         self.assertIn("errcode",result)
         self.assertEqual(result["errcode"],0)
+    
+    def test_expertUnregister_1(self):
+        
+        # 先生成一个expert实例
+
+        # 提交数据给服务
+        url = reverse("experts:service.ExpertRegister")
+        postData = {}
+        # 填写一个正常存在的帐号
+        postData["ExpertCode"] = "Scalping(rb3)"
+        postData["AccountLoginId"] = "100646"
+        postData["AccountCompanyName"] = "HF Markets Ltd"
+        postData["AccountServerName"] = "HFMarkets-Live Server"
+        response = self.client.post(url,postData)                   #  调用ExpertRegister
+
+        # 检查返回状态               
+        self.assertEqual(response.status_code,200)
+        result = json.loads(response.content)
+        self.assertIn("errcode",result)
+        self.assertEqual(result["errcode"],0)
+        
+        # 读取实例id和更新令牌
+        expertInstanceId = result["data"]["ExpertInstanceId"]
+        token = result["data"]["Token"]
+        #print("expertInstanceId",expertInstanceId)
+
+        # 尝试将其注销
+        url = reverse("experts:service.ExpertUnregister")
+        postData = {}
+
+        # 填写实例标识和更新令牌
+        postData["ExpertInstanceId"] = expertInstanceId
+        postData["Token"] = token
+        response = self.client.post(url,postData)                    #  调用ExpertUnregister
+        #print(response)
+        
+        # 检查返回状态和数据
+        self.assertEqual(response.status_code,200)
+        result = json.loads(response.content)
+        self.assertIn("errcode",result)
+        self.assertEqual(result["errcode"],0)
+        
+        # 检查expert状态是否已经修改为P
+        expertInstanceList = ExpertInstance.objects.filter(id=expertInstanceId)
+        self.assertEqual(len(expertInstanceList),1)
+        expertInstance = expertInstanceList[0]
+        self.assertEqual(expertInstance.state,'P')
+        
 
 
 class DatabaseTransactionTest(TransactionTestCase):

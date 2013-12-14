@@ -23,7 +23,7 @@ def expertRegister(request):
         if len(expertCode) == 0:
             raise
     except:
-        return HttpResponse(packResult(-1,"需要提供智能交易代码(ExpertCode)",{}))
+        return HttpResponse(packResult(-1,"Need to provide ExpertCode.",{}))
     
     # 读取当前登录账户号
     try:
@@ -31,7 +31,7 @@ def expertRegister(request):
         if len(accountLoginId) == 0:
             raise
     except:
-        return HttpResponse(packResult(-1,"需要提供账户号(AccountLoginId)",{}))
+        return HttpResponse(packResult(-1,"Need to provide AccountLoginId.",{}))
         
     # 读取交易商名称
     try:
@@ -39,7 +39,7 @@ def expertRegister(request):
         if len(accountCompanyName) == 0:
             raise
     except:
-        return HttpResponse(packResult(-1,"需要提交易商名称(AccountCompanyName)",{}))           
+        return HttpResponse(packResult(-1,"Need to provide AccountCompanyName.",{}))           
     
     # 读取服务器名称 
     try:
@@ -47,7 +47,7 @@ def expertRegister(request):
         if len(accountServerName) == 0:
             raise
     except: 
-        return HttpResponse(packResult(-1,"需要提供服务器名称(AccountServerName)",{}))
+        return HttpResponse(packResult(-1,"Need to provide AccountServerName.",{}))
 
     # 准备读取和生成相关数据    
     expertInstance = ExpertInstance()
@@ -79,7 +79,7 @@ def expertRegister(request):
        account = accountList[0]
     else:
         transaction.savepoint_rollback(sp)    # 回滚可能已经写入的expert对象
-        return HttpResponse(packResult(-1,"账户配置不存在",{}))    
+        return HttpResponse(packResult(-1,"Account information or config is invalid.",{}))    
     expertInstance.account = account
 
     # 保存实例信息
@@ -88,6 +88,7 @@ def expertRegister(request):
     expertInstance.lotSize = account.lotSize
     expertInstance.positionCount = 0
     expertInstance.floatProfit = 0    
+    expertInstance.state = "A"
     expertInstance.stateTime = timezone.now()
     expertInstance.save()
         
@@ -100,6 +101,55 @@ def expertRegister(request):
     data["AccountTypeName"] = expertInstance.account.accountType.name
     data["TradingAllowed"] = expertInstance.tradingAllowed
     data["LotSize"] = expertInstance.lotSize    
-    print(data)        
-    return HttpResponse(packResult(0,"成功",data))
+    #print(data)        
+    return HttpResponse(packResult(0,"Succeed!",data))
+
+
+@transaction.atomic
+def expertUnregister(request):
+    
+    # 读取Eexpert实例标识
+    try:
+        expertInstanceId = request.POST["ExpertInstanceId"]
+        if len(expertInstanceId) == 0:
+            raise
+    except:
+        return HttpResponse(packResult(-1,"Need to provide ExpertInstanceId.",{}))
+    
+    # 读取Expert Instance更新令牌
+    try:
+        token = request.POST["Token"]
+        if len(token) == 0:
+            raise    
+    except:
+        return HttpResponse(packResult(-1,"Need to provide Token.",{}))
+    
+    # 检查实例是否存在
+    expertInstanceList = ExpertInstance.objects.filter(id = expertInstanceId)
+    if len(expertInstanceList) == 0:
+        return HttpResponse(packResult(-1,"ExpertInstance is not exist",{}))
+    expertInstance = expertInstanceList[0]
+
+    # 检查令牌是否正确
+    if expertInstance.token != token:
+        return HttpResponse(packResult(-1,"ExpertInstanceId and Token is not matched.",{}))
+    
+    # 检查Expert Instance是否失效
+    if expertInstance.state != "A":
+        #print("expertInstance.state=",expertInstance.state)
+        return HttpResponse(packResult(-1,"ExpertInstance is not active",{}))     
+    
+    # 更新ExpertInstance状态未失效
+    expertInstance.state = "P"
+    expertInstance.stateTime = timezone.now()   
+    expertInstance.save()
+    
+    return HttpResponse(packResult(0,"Succeed!",{}))
+    
+
+
+
+
+
+
 

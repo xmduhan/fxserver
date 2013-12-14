@@ -22,6 +22,7 @@ class ExpertInstance(models.Model):
     lotSize = models.FloatField("交易手数")
     positionCount = models.IntegerField("当前头寸数")
     floatProfit = models.FloatField("浮动盈亏")
+    state = models.CharField("状态",max_length=10)
     stateTime = models.DateTimeField("状态更新时间")
     class Meta:
         verbose_name = "(02)交易实例"

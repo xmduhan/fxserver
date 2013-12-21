@@ -23,7 +23,7 @@ class Company(models.Model):
     timeZone = models.ForeignKey(TimeZone,verbose_name="时区")           
     terminalUrl = models.CharField("交易终端下载地址",max_length=512)
     def logoIcoListDisplay(self):
-        return  u"<img src='%s' height='30' width='30'  />" %  self.logoIco.url
+        return  u"<img  src='%s' height='30' width='30'  />" %  self.logoIco.url
     logoIcoListDisplay.allow_tags = True
     class Meta:
         verbose_name = "交易商"

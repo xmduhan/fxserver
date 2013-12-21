@@ -86,9 +86,11 @@ def expertRegister(request):
     #print("account.losSzie=",account.lotSize)
     expertInstance.tradingAllowed = account.tradingAllowed
     expertInstance.lotSize = account.lotSize
+    expertInstance.accountType = account.accountType
     expertInstance.positionCount = 0
     expertInstance.floatProfit = 0    
-    expertInstance.state = "A"
+    expertInstance.state = "A"  
+    expertInstance.createTime = timezone.now()
     expertInstance.stateTime = timezone.now()
     expertInstance.save()
         

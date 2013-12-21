@@ -1,4 +1,5 @@
 # Django settings for fxserver project.
+from config import development
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -11,6 +12,7 @@ ADMINS = (
 
 MANAGERS = ADMINS
 
+
 '''
 DATABASES = {
     'default': {
@@ -20,16 +22,30 @@ DATABASES = {
 }
 
 '''
-DATABASES = {
-    'default': {
-        'ENGINE':'django.db.backends.postgresql_psycopg2',
-        'NAME': 'fxserver',
-        'USER': 'fxserver',
-        'PASSWORD': 'fxserver',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+
+if development:
+    DATABASES = {
+        'default': {
+            'ENGINE':'django.db.backends.postgresql_psycopg2',
+            'NAME': 'fxserver_development',
+            'USER': 'fxserver_development',
+            'PASSWORD': 'fxserver_development',
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE':'django.db.backends.postgresql_psycopg2',
+            'NAME': 'fxserver',
+            'USER': 'fxserver',
+            'PASSWORD': 'fxserver',
+            'HOST': '127.0.0.1',
+            'PORT': '5432',
+        }
+    }
+    
 #'''
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False

@@ -1,5 +1,4 @@
 # Django settings for fxserver project.
-from config import development
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -22,6 +21,14 @@ DATABASES = {
 }
 
 '''
+
+
+
+try:
+    from devconfig import development
+except:
+    development = False
+
 
 if development:
     DATABASES = {

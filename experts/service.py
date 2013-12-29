@@ -147,11 +147,16 @@ def expertUnregister(request):
     expertInstance.save()
     
     return HttpResponse(packResult(0,"Succeed!",{}))
-    
+
+'''
+
+@transaction.atomic
+def expertInfomation(request):
+    pass
 
 
+@transaction.atomic
+def expertTrandingRecord(request):
+    pass
 
-
-
-
-
+'''

@@ -31,4 +31,29 @@ class ExpertInstance(models.Model):
         verbose_name = "(02)交易实例"
         verbose_name_plural = "(02)交易实例"
 
+class OrderType(models.Model):
+    orderTypeId = IntegerField(verbose_name="类型标识")
+    orderTypeName = models.CharField("类型名称")
+
+class TradingOrder(models.Model):
+    expertInstance = models.ForeignKey(ExpertInstance,verbose_name="交易实例"
+    ticket = models.IntegerField("订单号")
+    symbol = models.CharField("交易品种",max_length="256")
+    orderType = models.ForeignKey(OrderType,verbose_name="订单类型")
+    openTime = models.DateTimeField("开仓时间")
+    openPrice = models.FloatField("开仓价格")
+    closeTime = models.DateTimeField("平仓价格")
+    closePrice = models.FloatField("平仓价格")
+    lots = models.FloatField("交易手数")
+    stopLoss = models.FloatField("止损水平")
+    takeProfit = models.FloatField("止赢水平")
+    comment = models.FloatField("订单注释")
+    commission = models.FloatField("手续费")
+    swap = models.FloatField("库存费")
+    expiration = models.DateTimeField("过期时间")
+    magicNumber = models.IntegerField("订单标识")
+    profit = models.FloatField("获利")
+
+
+
 

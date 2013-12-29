@@ -32,11 +32,11 @@ class ExpertInstance(models.Model):
         verbose_name_plural = "(02)交易实例"
 
 class OrderType(models.Model):
-    orderTypeId = IntegerField(verbose_name="类型标识")
-    orderTypeName = models.CharField("类型名称")
+    orderTypeId = models.IntegerField(verbose_name="类型标识")
+    orderTypeName = models.CharField("类型名称",max_length="256")
 
 class TradingOrder(models.Model):
-    expertInstance = models.ForeignKey(ExpertInstance,verbose_name="交易实例"
+    expertInstance = models.ForeignKey(ExpertInstance,verbose_name="交易实例")
     ticket = models.IntegerField("订单号")
     symbol = models.CharField("交易品种",max_length="256")
     orderType = models.ForeignKey(OrderType,verbose_name="订单类型")

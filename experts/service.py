@@ -154,9 +154,18 @@ def expertUnregister(request):
 def expertInfomation(request):
     pass
 
+'''
 
 @transaction.atomic
-def expertTrandingRecord(request):
-    pass
+def tradingOrder(request):
+    print(request.POST)
+    print(request.BODY)
+    return HttpResponse(packResult(0,"Succeed!",{}))
 
-'''
+
+
+
+
+
+
+

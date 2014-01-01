@@ -2,6 +2,8 @@
 
 import urllib,urllib2,chardet
 from HTMLParser import HTMLParser
+from datetime import datetime
+from models import *
 
 
 class FinanceDataParser(HTMLParser):
@@ -14,7 +16,7 @@ class FinanceDataParser(HTMLParser):
         self.td = 0
         self.row = []
         self.dataset = []
-
+        self.tddata = ""
     def handle_starttag(self, tag, attrs):
         if tag.upper() == "DIV":
             self.div += 1
@@ -24,6 +26,8 @@ class FinanceDataParser(HTMLParser):
             self.tr += 1
         if tag.upper() == "TD":
             self.td += 1
+            if self.fdata == 1 and self.td == 2:
+                self.tddata = ""
 
     def handle_endtag(self, tag):
         if tag.upper() == "DIV":
@@ -36,6 +40,8 @@ class FinanceDataParser(HTMLParser):
                 self.row=[]
             self.tr -= 1
         if tag.upper() == "TD":
+            if self.fdata == 1 and self.td == 2:      # 数据在第2层的嵌套表中            
+                self.row.append(self.tddata)
             self.td -= 1
 
     def handle_data(self, data):
@@ -43,8 +49,7 @@ class FinanceDataParser(HTMLParser):
             if data == "财经数据":
                 self.fdata = 1
         if self.fdata == 1 and self.td == 2:          # 数据在第2层嵌套表
-            self.row.append(data)
-
+            self.tddata += data
 
 class FinanceEventParser(HTMLParser):
     
@@ -58,6 +63,7 @@ class FinanceEventParser(HTMLParser):
         self.row = []
         self.nrow = 0
         self.dataset = []
+        self.tddata = ""
 
     def handle_starttag(self, tag, attrs):
         if tag.upper() == "DIV":
@@ -67,7 +73,9 @@ class FinanceEventParser(HTMLParser):
         if tag.upper() == "TR":
             self.tr += 1
         if tag.upper() == "TD":
-            self.td += 1
+            self.td += 1            
+            if self.fdata == 1 and self.td == 1:
+                self.tddata = ""
     def handle_endtag(self, tag):
         if tag.upper() == "DIV":
             self.div -= 1
@@ -81,6 +89,8 @@ class FinanceEventParser(HTMLParser):
                 self.nrow += 1
             self.tr -= 1
         if tag.upper() == "TD":
+            if self.fdata == 1 and self.td == 1:
+                self.row.append(self.tddata)                
             self.td -= 1
     def handle_data(self, data):
         if self.div > 1 :
@@ -89,7 +99,7 @@ class FinanceEventParser(HTMLParser):
             if data == "世界各国假期":
                 self.fdata = 0
         if self.fdata == 1 and self.td == 1:
-            self.row.append(data)
+            self.tddata += data
 
 
 class HolidayParser(HTMLParser):
@@ -103,6 +113,7 @@ class HolidayParser(HTMLParser):
         self.row = []
         self.nrow = 0
         self.dataset = []
+        self.tddata = ""
 
     def handle_starttag(self, tag, attrs):
         if tag.upper() == "DIV":
@@ -113,6 +124,9 @@ class HolidayParser(HTMLParser):
             self.tr += 1
         if tag.upper() == "TD":
             self.td += 1
+            if self.fdata == 1 and self.td == 1:
+                self.tddata = ""
+
     def handle_endtag(self, tag):
         if tag.upper() == "DIV":
             self.div -= 1
@@ -125,7 +139,9 @@ class HolidayParser(HTMLParser):
                     self.row=[]
                 self.nrow += 1
             self.tr -= 1
-        if tag.upper() == "TD":
+        if tag.upper() == "TD":            
+            if self.fdata == 1 and self.td == 1:
+                self.row.append(self.tddata)                
             self.td -= 1
     def handle_data(self, data):
         if self.div > 1 :
@@ -134,8 +150,7 @@ class HolidayParser(HTMLParser):
             if data == "财经数据":
                 self.fdata = 0
         if self.fdata == 1 and self.td == 1:
-            self.row.append(data)
-
+            self.tddata += data
 
 
 
@@ -148,7 +163,7 @@ def printDataset(dataset):
         print(str(i) + ":" + (",".join(cols)))
 
 
-def getDailyfxData(day):
+def getData(day):
     data = {"type":"calendar","date":day}
     postData = urllib.urlencode(data)
     url = "http://cdn.dailyfx.com.hk/inc/process.php"
@@ -160,7 +175,7 @@ def getDailyfxData(day):
     financeDataParser = FinanceDataParser()
     financeDataParser.feed(content)
     financeData = financeDataParser.dataset
-    if len(financeData) == 1 and financeData[0][2].find("没有财经数据") != -1:
+    if len(financeData) == 1 and financeData[0][0].find("没有财经数据") != -1:
         result["FinanceData"] = []
     else:
         result["FinanceData"] = financeData    
@@ -169,7 +184,7 @@ def getDailyfxData(day):
     financeEventParser = FinanceEventParser()
     financeEventParser.feed(content)       
     financeEvent = financeEventParser.dataset
-    if len(financeEvent) == 1 and financeEvent[0][2].find("没有财经事件") != -1:
+    if len(financeEvent) == 1 and financeEvent[0][0].find("没有财经事件") != -1:
         result["FinanceEvent"] = []
     else:
         result["FinanceEvent"] = financeEvent
@@ -177,12 +192,80 @@ def getDailyfxData(day):
     holidayParser = HolidayParser()
     holidayParser.feed(content)
     holiday = holidayParser.dataset
-    if len(holiday) == 1 and holiday[0][2].find("没有假期") != -1:
+    if len(holiday) == 1 and holiday[0][0].find("没有假期") != -1:
         result["Holiday"] = [] 
     else:    
         result["Holiday"] = holiday
     # 返回数据
     return result
+
+def update(day):
+    res = getData(day)
+    
+    # 读取金融数据
+    financeData = res["FinanceData"]
+    for i in range(0,len(financeData)):
+        row = financeData[i]
+        time = datetime.strptime(row[0] + " " + row[1],"%Y-%m-%d %H:%M")
+        event = row[2]
+        grade = row[3]
+        previous = row[4]
+        forecast = row[5]
+        result = row[6]
+        
+        # 检查数据是否存在
+        listDFX_FinanceData = DFX_FinanceData.objects.filter(time=time,event=event)
+        if len(listDFX_FinanceData) == 0 :
+            # 不存在，新建数据
+            dfx_FinanceData = DFX_FinanceData()        
+        else:
+            # 已经存在，将其更新
+            dfx_FinanceData = listDFX_FinanceData[0]
+
+        # 保存数据
+        dfx_FinanceData.time = time
+        dfx_FinanceData.event = event
+        dfx_FinanceData.grade = grade
+        dfx_FinanceData.previous = previous
+        dfx_FinanceData.forecast = forecast
+        dfx_FinanceData.result = result
+        dfx_FinanceData.save()
+
+    # 读取金融事件   
+    financeEvent = res["FinanceEvent"]
+    for i in range(0,len(financeEvent)):
+        
+        if len(row[1]) == 0 :            
+            hh24 = "00:00"
+        else:
+            hh24 = row[1]
+        row = financeEvent[i]
+        time = datetime.strptime(row[0] + " " + hh24,"%Y-%m-%d %H:%M")
+        currency = row[2]
+        event = row[3]
+
+        # 检查数据是否存在
+        listDFX_FinanceEvent = DFX_FinanceEvent.objects.filter(time=time,event=event)
+        if len(listDFX_FinanceEvent) == 0:
+            # 不存在，新建数据
+            dfx_FinanceEvent = DFX_FinanceEvent()
+        else:
+            # 已经存在，将其更新
+            dfx_FinanceEvent = listDFX_FinanceEvent[0]
+
+        # 保存数据
+        dfx_FinanceEvent.time = time
+        dfx_FinanceEvent.currency = currency
+        dfx_FinanceEvent.event = event
+        dfx_FinanceEvent.save()
+
+
+    # 读取各国假期
+    #holiday = res["Holiday"]
+    
+    
+
+
 
 
 #data = {"type":"calendar","date":"2014-01-01",}
@@ -207,7 +290,7 @@ def getDailyfxData(day):
 
 
 
-res = getDailyfxData("2013-12-05")
+res = getData("2013-12-05")
 printDataset(res["FinanceData"])
 print("-----------------------------------")
 printDataset(res["FinanceEvent"])

@@ -2,7 +2,7 @@
 
 import urllib,urllib2,chardet
 from HTMLParser import HTMLParser
-from datetime import datetime
+from datetime import datetime,timedelta
 from models import *
 
 
@@ -36,7 +36,8 @@ class FinanceDataParser(HTMLParser):
             self.table -= 1
         if tag.upper() == "TR":
             if self.fdata == 1 and self.tr == 2:      # 数据在第2层的嵌套表中
-                self.dataset.append(self.row)
+                if len(self.row) == 7 :
+                    self.dataset.append(self.row)
                 self.row=[]
             self.tr -= 1
         if tag.upper() == "TD":
@@ -84,7 +85,8 @@ class FinanceEventParser(HTMLParser):
         if tag.upper() == "TR":
             if self.fdata == 1 and self.tr == 1:
                 if self.nrow != 0 :
-                    self.dataset.append(self.row)
+                    if len(self.row) == 4:
+                        self.dataset.append(self.row)
                     self.row=[]
                 self.nrow += 1
             self.tr -= 1
@@ -205,8 +207,12 @@ def update(day):
     # 读取金融数据
     financeData = res["FinanceData"]
     for i in range(0,len(financeData)):
-        row = financeData[i]
-        time = datetime.strptime(row[0] + " " + row[1],"%Y-%m-%d %H:%M")
+        row = financeData[i]        
+        if len(row[1]) == 0 :            
+            hh24 = "00:00"
+        else:
+            hh24 = row[1]
+        time = datetime.strptime(row[0] + " " + hh24,"%Y-%m-%d %H:%M")
         event = row[2]
         grade = row[3]
         previous = row[4]
@@ -233,13 +239,12 @@ def update(day):
 
     # 读取金融事件   
     financeEvent = res["FinanceEvent"]
-    for i in range(0,len(financeEvent)):
-        
+    for i in range(0,len(financeEvent)):        
+        row = financeEvent[i]
         if len(row[1]) == 0 :            
             hh24 = "00:00"
         else:
             hh24 = row[1]
-        row = financeEvent[i]
         time = datetime.strptime(row[0] + " " + hh24,"%Y-%m-%d %H:%M")
         currency = row[2]
         event = row[3]
@@ -261,7 +266,42 @@ def update(day):
 
 
     # 读取各国假期
-    #holiday = res["Holiday"]
+    Holiday = res["Holiday"]
+    for i in range(0,len(Holiday)):
+        row = Holiday[i]
+        date = datetime.strptime(row[0],"%Y-%m-%d")
+        currency =  row[1]
+        holiday = row[2]
+        
+        # 检查数据是否存在
+        listDFX_Holiday = DFX_Holiday.objects.filter(
+            date=date,currency=currency,holiday=holiday
+        )
+        if len(listDFX_Holiday) == 0 :
+            # 不存在添加数据
+            dfx_Holiday = DFX_Holiday()
+        else:
+            dfx_Holiday = listDFX_Holiday[0]
+
+        # 保存数据
+        dfx_Holiday.date = date
+        dfx_Holiday.currency = currency
+        dfx_Holiday.holiday = holiday
+        dfx_Holiday.save()
+        
+def updateBetween(beginDay,endDay):
+    beginDate = datetime.strptime(beginDay,"%Y-%m-%d")
+    endDate = datetime.strptime(endDay,"%Y-%m-%d")
+    for i in range(0,(endDate-beginDate).days + 1) :
+        day = (beginDate + timedelta(i)).strftime("%Y-%m-%d")
+        try:
+            update(day)
+            print(day+" : ok")
+        except Exception as e:            
+            print(day+" : failed",e)
+            raise
+            
+
     
     
 
@@ -290,12 +330,12 @@ def update(day):
 
 
 
-res = getData("2013-12-05")
-printDataset(res["FinanceData"])
-print("-----------------------------------")
-printDataset(res["FinanceEvent"])
-print("-----------------------------------")
-printDataset(res["Holiday"])
+#res = getData("2013-12-05")
+#printDataset(res["FinanceData"])
+#print("-----------------------------------")
+#printDataset(res["FinanceEvent"])
+#print("-----------------------------------")
+#printDataset(res["Holiday"])
 
 
 
